@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" >
+
+  <!-- アプリケーションログ設定 -->
+  <appender name="dailyRotation" class="org.apache.log4j.DailyRollingFileAppender">
+     <param name="File" value="./yuyuAiLogs/appLog.log" />
+     <param name="Append" value="true" />
+     <param name="Encoding" value="Shift_JIS" />
+     <param name="DatePattern" value="'.'yyyy-MM-dd" />
+     <layout class="org.apache.log4j.PatternLayout">
+        <param name="ConversionPattern" value="%d{yyyy/MM/dd HH:mm:ss} [%-5p] [%-33F #%-30M @%-4L] -  %m%n" />
+     </layout>
+  </appender>
+
+  <!-- コンソール出力設定 -->
+  <appender name="stdout" class="org.apache.log4j.ConsoleAppender">
+     <param name="Target" value="System.out" />
+     <layout class="org.apache.log4j.PatternLayout">
+        <param name="ConversionPattern" value="%d{yyyy/MM/dd HH:mm:ss} [%-5p] [%-33F #%-30M @%-4L] -  %m%n" />
+     </layout>
+  </appender>
+
+  <root>
+    <level value="debug" />
+    <appender-ref ref="dailyRotation" />
+    <appender-ref ref="stdout"/>
+  </root>
+</log4j:configuration>
