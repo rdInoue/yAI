@@ -1,8 +1,10 @@
 package eventHandler;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.log4j.Logger;
 
@@ -10,6 +12,10 @@ import sessionCtrl.SessionBean;
 import sessionCtrl.SessionData;
 import util.MessageUtil;
 
+import com.google.gson.Gson;
+import com.ibm.watson.developer_cloud.visual_recognition.v3.VisualRecognition;
+import com.ibm.watson.developer_cloud.visual_recognition.v3.model.ClassifyImagesOptions;
+import com.ibm.watson.developer_cloud.visual_recognition.v3.model.VisualClassification;
 import com.linecorp.bot.model.ReplyMessage;
 import com.linecorp.bot.model.action.Action;
 import com.linecorp.bot.model.action.PostbackAction;
@@ -31,7 +37,7 @@ public class MessageEventHandler {
 	private static final Logger LOGGER = Logger.getLogger(MessageEventHandler.class.getName());
 
 	@SuppressWarnings("unchecked")
-	protected ReplyMessage handleMessageEvent(MessageEvent<?> messageEvent) throws IOException {
+	protected ReplyMessage handleMessageEvent(MessageEvent<?> messageEvent) throws IOException, InterruptedException, ExecutionException {
 
 		final MessageContent messageContent = messageEvent.getMessage();
 		if (messageContent == null) {
@@ -174,8 +180,10 @@ public class MessageEventHandler {
 	 * @param event
 	 * @return
 	 * @throws IOException
+	 * @throws ExecutionException
+	 * @throws InterruptedException
 	 */
-	protected ReplyMessage handleImageMessageEvent(MessageEvent<ImageMessageContent> event) throws IOException {
+	protected ReplyMessage handleImageMessageEvent(MessageEvent<ImageMessageContent> event) throws IOException, InterruptedException, ExecutionException {
 		LOGGER.debug("START:" + new Object(){}.getClass().getEnclosingClass().getName() + "#" + new Object(){}.getClass().getEnclosingMethod().getName());
 
 		// 基本情報を収集
@@ -203,6 +211,84 @@ public class MessageEventHandler {
     		String result = "住所判明";
     		//String result = "住所不明";
     		String address = "東京都新宿区～";
+
+    		// ▼以下、井上追加 Watson VR▼
+    		LOGGER.debug("★WatsonVR_START");
+    		System.out.println( "VisualRecognition classify start" );
+
+    		/*
+    		VisualRecognition service = new VisualRecognition(VisualRecognition.VERSION_DATE_2016_05_20);
+    		// APIキーをセット
+    		service.setApiKey(IWatson.API_KEY);
+
+    		System.out.println("Classify an image");
+
+    		ClassifyImagesOptions op = new ClassifyImagesOptions();
+    		ClassifyImagesOptions options = new ClassifyImagesOptions.Builder()
+    		    .images(new File("src/test/resources/visual_recognition/car.png"))
+    		    .build();
+    		VisualClassification result = service.classify(options).execute();
+    		System.out.println(result);
+    		*/
+
+    		VisualRecognition service = new VisualRecognition(VisualRecognition.VERSION_DATE_2016_05_20);
+    		// APIキーをセット
+    		service.setApiKey(IWatson.API_KEY);
+    		/* 以下、パブリックなクラスとして判定することは成功
+    		//service.setUsernameAndPassword("yuuta_inoue@rdslcs.com", "tr*******");
+    		System.out.println("★Classify an image★");
+    		ClassifyImagesOptions options = new ClassifyImagesOptions.Builder()
+    		    .images(new File("./fruitbowl.jpg"))
+    		    .build();
+    		VisualClassification result2 = service.classify(options).execute();
+    		System.out.println(result2);
+    		LOGGER.debug("★★" + result2);
+			*/
+
+    		// 詳細情報
+	        // classifierIds用
+	        List<String> list = Arrays.asList(IWatson.CLASSIFIER_ID);
+
+	        // スコアを取得
+	        ClassifyImagesOptions options = new ClassifyImagesOptions.Builder()
+	        		.classifierIds(list)
+	        		.threshold(0.0)
+	        		.images(new File("./testIn_5.jpg"))
+	        	    .build();
+	        VisualClassification result2 = service.classify(options).execute();
+	        System.out.println(result2);
+    		LOGGER.debug("★★" + result2);
+
+    		String json = result2.toString();
+    		Gson gson = new Gson();
+    		JsonImage jsonImage = gson.fromJson(result2.toString(), JsonImage.class);
+    		//JsonImage jsonImage = JSON.decode(json, JsonImage.class);
+    		// ◆課題
+    		// 　①LINEで送信された画像を判定対象とする
+    		// 　②受け取ったJSONからclass名およびscoreを取得する
+    		// 　③適切にクラス化する
+    		// 　④class名およびscoreの値に応じて処理を分岐させる
+    		System.out.println("★getImages_processed:" + jsonImage.getImages_processed());
+    		System.out.println("★getImages:" + jsonImage.getImages());
+
+	        System.out.println( "VisualRecognition getClassifier end" );
+
+	        /* 以下、NG
+            // スコアを取得
+    		InputStream imagesStream = new FileInputStream("./fruitbowl.jpg");
+    		ClassifyOptions classifyOptions = new ClassifyOptions.Builder()
+    		  .imagesFile(imagesStream)
+    		  .imagesFilename("fruitbowl.jpg")
+    		  .parameters("{\"classifier_ids\": [\"Tegaki_1998646497\","
+    		    + "\"owners\": [\"IBM\", \"me\"]}")
+    		  .build();
+    		ClassifiedImages result3 = service.classify(classifyOptions).execute();
+    		System.out.println(result3);
+    		LOGGER.debug("★★" + result3);
+    		*/
+    		LOGGER.debug("★WatsonVR_END");
+    		// ▲以上、井上追加 Watson VR▲
+
 
     		if (result.equals("住所判明")) {
 				// セッション更新

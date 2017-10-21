@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -82,7 +83,12 @@ public class PostEventMainHandler extends HttpServlet {
 				if (event instanceof MessageEvent) {
 					final MessageEvent<?> messageEvent = (MessageEvent<?>) event;
 					MessageEventHandler meh = new MessageEventHandler();
-					LineUtil.reply(meh.handleMessageEvent(messageEvent));
+					try {
+						LineUtil.reply(meh.handleMessageEvent(messageEvent));
+					} catch (InterruptedException | ExecutionException e) {
+						// TODO 自動生成された catch ブロック
+						e.printStackTrace();
+					}
 				}
 				else if (event instanceof UnfollowEvent) {
 					UnfollowEvent unfollowEvent = (UnfollowEvent) event;
